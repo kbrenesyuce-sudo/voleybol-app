@@ -3,68 +3,62 @@ import { NextResponse } from "next/server";
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const age = body.ageGroup || "14-16 Yaş (Yıldız)";
-    const level = body.level || "Orta Seviye";
-    const count = body.playerCount || "12";
-    const dur = body.duration || "90";
-    const konu = (body.topic || "Temel Teknik").toUpperCase();
+    const { ageGroup, gender, level, playerCount, duration, topic } = body;
 
-    // 1. YAŞ GRUBUNA GÖRE PEDAGOJİK YAKLAŞIM VE SAHA DİZİLİŞİ BELİRLEME
-    let yasDetayi = `• ${count} sporcu sahada 2'şerli eşleşerek temel ${konu} formuna odaklanır.`;
-    if (age.includes("8-10")) {
-      yasDetayi = `• 8-10 Yaş Mini Voleybol Standartları: Ağır yükleme yapılmaz, ${count} mini sporcu hafif/sünger toplarla oyun oynayarak ${konu} mekaniğini öğrenir.`;
-    } else if (age.includes("17+")) {
-      yasDetayi = `• 17+ Yetişkin ve A Takım Düzeyi: Maksimum reaksiyon hızı! ${count} profesyonel sporcu tam maç temposunda kombine ${konu} istasyonlarında çalışır.`;
+    // Vercel panelinden güvenli bir şekilde okuyacağımız gizli şifre anahtarı
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      return NextResponse.json({ error: "Sistemde API anahtarı yapılandırılmamış!" }, { status: 500 });
     }
 
-    // 2. SEVİYEYE GÖRE ZORLUK VE METOT BELİRLEME
-    let seviyeDetayi = `• ${level} seviyesine uygun kayma adımlı deplasmanlı ${konu} çalışması yapılır.`;
-    if (level === "Başlangıç") {
-      seviyeDetayi = `• Başlangıç Seviyesi Metodu: İzole ve topsuz mekanik gösterimler ön plandadır. Hatalı duruşlarda antrenör anında müdahale eder.`;
-    } else if (level === "İleri Düzey") {
-      seviyeDetayi = `• İleri Düzey Profesyonel Metodu: Driller arasına skor baskısı, çiftli blok savunmaları ve üst üste 3 hatasız aksiyon disiplini eklenir.`;
+    // OpenAI sunucularına doğrudan bulut üzerinden talep gönderiyoruz
+    const response = await fetch("https://openai.com", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini", // SaaS dünyasının en hızlı ve akıllı fiyat/performans modeli
+        temperature: 0.7,
+        messages: [
+          {
+            role: "system",
+            content: "Sen FIVB (Uluslararası Voleybol Federasyonu) seviyesinde kıdemli bir voleybol başantrenörüsün. Görevin, gelen parametrelere göre dünyanın en detaylı, pedagojik, taktik tahtası netliğinde antrenman planlarını hazırlamaktır. Çıktıyı tamamen Türkçe, samimi ama profesyonel bir dille yaz."
+          },
+          {
+            role: "user",
+            content: `Lütfen şu parametrelere göre kılcal damarlarına kadar detaylandırılmış profesyonel bir voleybol antrenman planı hazırla:
+            - Yaş Kategorisi: ${ageGroup}
+            - Takım Cinsiyeti: ${gender}
+            - Sporcuların Seviyesi: ${level}
+            - Sahadaki Oyuncu Sayısı: ${playerCount} Sporcu
+            - Toplam Antrenman Süresi: ${duration} Dakika
+            - Günün Ana Odak Teması / Çalışılacak Konu: ${topic}
+
+            İstediğim Çıktı Formatı ve Kuralları:
+            1. Matematiksel olarak verilen ${duration} dakikayı bölümlere (Isınma, Ana Tema, Taktik/Maç, Soğuma) mantıklı oranlarda paylaştır ve dakikaları başlığa yaz.
+            2. Yüzeysel ifadeler (örneğin 'smaç çalışması yapın') ASLA kullanma.
+            3. Her drilin altında: 'Saha Dizilimi (Oyuncular nerede duracak?)', 'Drilin Akışı (Top nereden nereye, nasıl atılacak?)' ve 'Antrenörün Odaklanacağı Teknik Detay/Hata Düzeltme' maddelerini çok derinlemesine, uzun uzun anlat.
+            4. Seçilen yaş grubunun (${ageGroup}) pedagojisine ve seviyesine (${level}) %100 sadık kal.`
+          }
+        ]
+      })
+    });
+
+    const aiData = await response.json();
+    
+    if (aiData.error) {
+      return NextResponse.json({ error: `OpenAI Bulut Hatası: ${aiData.error.message}` }, { status: 400 });
     }
 
-    // 3. SÜRE MATEMATİĞİ HESAPLAMA
-    const toplam = parseInt(dur) || 90;
-    const isinma = Math.round(toplam * 0.16);
-    const taktik = Math.round(toplam * 0.22);
-    const soguma = Math.round(toplam * 0.11);
-    const anaTema = toplam - (isinma + taktik + soguma);
+    return NextResponse.json({
+      title: `✨ AI Akıllı Programı (${duration} Dakika)`,
+      level: level,
+      rawText: aiData.choices[0].message.content
+    });
 
-    // 4. ŞABLON BİRLEŞTİRİCİ
-    const planText = `
-    🏐 ${age.toUpperCase()} GRUBU | ANTRENMAN PROGRAMI
-    ======================================================================
-    Seviye: ${level} | Oyuncu Sayısı: ${count} | Toplam Süre: ${toplam} Dakika
-    Günün Ana Odak Teması: ${konu}
-    
-    ----------------------------------------------------------------------
-    1. ISINMA & MOBİLİTE SEKANSI (${isinma} Dakika)
-    ----------------------------------------------------------------------
-    • Çizgiler arası dinamik koşularla nabız yükseltme ve omuz aktivasyonu.
-    
-    ----------------------------------------------------------------------
-    2. ANA TEMA TEKNİK ÇALIŞMASI: ${konu} (${anaTema} Dakika)
-    ----------------------------------------------------------------------
-    • Dril A - Mekanik Adaptasyon: Girilen "${konu}" başlığına yönelik temel duruş ve pozisyon alma çalışması.
-    ${yasDetayi}
-    ${seviyeDetayi}
-    • Dril B - Hedefe Aktarım: Çalışılan "${konu}" aksiyonlarının pasör havuzuna hassas olarak ulaştırılması serisi.
-    
-    ----------------------------------------------------------------------
-    3. TAKTİK & MAÇ SİMÜLASYONU (${taktik} Dakika)
-    ----------------------------------------------------------------------
-    • Günün konusu olan "${konu}" becerisini oyun içine aktarmak için kontrollü maç. Nizami yapılan her hareket takıma ekstra +2 puan yazılır.
-    
-    ----------------------------------------------------------------------
-    4. SOĞUMA & DEĞERLENDİRME (${soguma} Dakika)
-    ----------------------------------------------------------------------
-    • Kas ağrılarını önleyici statik esneme ve ${age} grubuna uygun performans geri bildirimi konuşması.
-    `;
-
-    return NextResponse.json({ title: `✨ AI Dinamik Programı (${toplam} Dk)`, level: level, rawText: planText });
-  } catch (e) {
-    return NextResponse.json({ error: "Hata" }, { status: 500 });
+  } catch (error) {
+    return NextResponse.json({ error: "Bulut sunucusu işleme esnasında hata verdi." }, { status: 500 });
   }
 }

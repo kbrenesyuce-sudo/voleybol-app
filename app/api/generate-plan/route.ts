@@ -11,100 +11,73 @@ export async function POST(req: Request) {
     const topic = body.topic || "Temel Teknik";
     const konu = topic.toUpperCase();
 
-    const toplamSure = parseInt(duration) || 90;
-    const isinmaSuresi = Math.round(toplamSure * 0.16);
-    const taktikSure = Math.round(toplamSure * 0.22);
-    const sogumaSure = Math.round(toplamSure * 0.11);
-    const anaTemaSuresi = toplamSure - (isinmaSuresi + taktikSure + sogumaSure);
+    let drilA = ""; let drilB = ""; let drilC = ""; let stratejiNotu = "";
+    const aranan = topic.toLowerCase();
 
-    const db: Record<string, Record<string, { strateji: string; a: string; b: string; c: string }>> = {
-      "8-10 Yaş (Mini)": {
-        "Başlangıç": {
-          strateji: `⚠️ MİNİ VOLEYBOL BAŞLANGIÇ: 8-10 yaş başlangıç seviyesinde ${konu} konusu tamamen oyunlaştırılmalı, top korkusunu yenme ve temel el-göz koordinasyonuna odaklanılmalıdır.`,
-          a: `• Oyunsal Tanışma (15 dk): Mini sporcular ${playerCount} kişiyle halka olur. ${konu} hareketinin temel duruşu gösterilir. Hafif/sünger toplarla can yakmadan yumuşak temas oyunları oynanır.`,
-          b: `• Koordinasyon Parkuru (15 dk): Sahaya dizilen renkli hunilerin arasından geçerek ${konu} pozisyonu alma ve sabit duran topa doğru teknik el/kol hareketiyle dokunma simülasyonu.`,
-          c: `• Ödüllü Hedef Oyunu (15 dk): Antrenörün çok yakından havadan yavaşça bıraktığı toplara mini sporcular sıçramadan/koşmadan sadece doğru ${konu} tekniğiyle dokunarak yerdeki minderleri vurmaya çalışır.`
-        },
-        "Orta Seviye": {
-          strateji: `💡 MİNİ VOLEYBOL ORTA SEVİYE STRATEJİSİ: Çocuklar ${konu} hareketini biliyor. Ritim ve adımlama kalitesine odaklanılmalı, hafif hareketlilik eklenmelidir.`,
-          a: `• Ritimli Adımlama (15 dk): ${konu} için gereken temel ayak adımlaması yerde çizili çizgiler üzerinde müzik veya alkış ritmiyle çalışılır. Son aşamada top fırlatılarak teknik birleştirilir.`,
-          b: `• Eşli Kontrollü Drill (15 dk): 2'şerli eşleşen mini oyuncular, birbirlerine kontrollü şekilde top atarak havada veya yerde ${konu} tekniğini üst üste 3 kez hatasız yapmaya çalışır.`,
-          c: `• File Önü Adaptasyon (15 dk): Alçaltılmış mini voleybol filesi önünde, antrenörün attığı toplara doğru hamle yaparak ${konu} aksiyonunu file üzerinden karşı sahaya aktarma çalışması.`
-        },
-        "İleri Düzey": {
-          strateji: `🔥 MİNİ VOLEYBOL İLERİ DÜZEY TAKTİĞİ: Yarışmacı mini takım altyapısı. ${konu} konusu saha içi pozisyon geçişleri ve mini maç taktikleriyle işlenmelidir.`,
-          a: `• Dinamik İstasyon Düzeni (15 dk): 3'lü gruplar halinde sürekli rotasyonla gelen toplara ${konu} uygulama. Hız ve çabuklukamp parametreleri drille eklenir.`,
-          b: `• Hedefli Seri Aksiyon (15 dk): File önünde veya defansta, ardı ardına gelen 4 topa ${konu} tekniğiyle müdahale etme ve topu sahanın derin köşelerine yönlendirme drili.`,
-          c: `• Mini Oyun Simülasyonu (15 dk): Sadece ${konu} tekniğinin kullanılabildiği, hatasız yapılan her hareketin takıma ekstra puan getirdiği yüksek tempolu mini saha maçı.`
-        }
-      },
-      "17+ Yaş (A Takım)": {
-        "Başlangıç": {
-          strateji: `⚠️ A TAKIM BAŞLANGIÇ UYARISI: Yetişkin hobi seviyesinde ${konu} konusu, fiziksel gücü doğru yönlendirerek hatasız teknik form oluşturma odaklı işlenir.`,
-          a: `• Kuvvet Dengeli Teknik (15 dk): Yetişkin kas yapısına uygun olarak ${konu} anında vücut ağırlığını dengeli dağıtma, omuz ve diz sakatlıklarını önleyici doğru duruş drili.`,
-          b: `• Net Hedefli Besleme (15 dk): Sahada pozisyon alan ${playerCount} yetişkin sporcuya gelen standart topları, oyun kurallarını bozmadan temiz bir ${konu} vuruşuyla sisteme dahil etme.`,
-          c: `• Basit Maç Formatı (15 dk): Kuralların basitleştirildiği, sadece ${konu} başarısına odaklanan kontrollü set oyunu.`
-        },
-        "Orta Seviye": {
-          strateji: `💡 A TAKIM ORTA SEVİYE SİSTEMİ: Profesyonel lig öncesi veya üniversite takımı. ${konu} konusu taktik sistemler ve kombine drillerle verilir.`,
-          a: `• 6 Bölge Kombinasyon Sistemi (15 dk): Sahanın farklı 6 noktasına rastgele fırlatılan toplara hareketlenerek organizasyon kurma ve ${konu} tekniğini yüksek yüzdelik doğruluğuyla tamamlama.`,
-          b: `• Blok Arkası Dublaj ve Savunma (15 dk): Bloktan seken blok-aut toplarını veya plase düşüşlerini ${konu} ile yukarı çıkarıp kontra atak başlatma drili.`,
-          c: `• Taktiksel Servis / Hücum Karşılama (15 dk): Rakibin stratejik hamlelerine karşı defansif duruşu bozmadan ${konu} mekaniğini koruma varyasyonu.`
-        },
-        "İleri Düzey": {
-          strateji: `🔥 A TAKIM İLERİ DÜZEY OPTİMİZASYONU: Üst Düzey Profesyonel Lig Standartları! Maksimum fiziksel güç, agresif taktikler ve sıfır hata toleransı ile ${konu} optimizasyonu.`,
-          a: `• Ultra Hızlı Geçiş Mimarisi (15 dk): 0.5 saniye reaksiyon süresi! Blok inişi sonrası anında geriye deplase olup, gelen sert kontra topa ${konu} ile bitirici hamleyi yapma drili.`,
-          b: `• Çiftli/Üçlü Blok Dağıtma Stratejisi (15 dk): Karşıdaki kurulu 3'lü profesyonel bloğu manipüle etmek için ${konu} aksiyonlarında havada yön değiştirme, bilek kırışları ve plase varyasyonları.`,
-          c: `• Kriz Anı ve Sistem Testi (15 dk): Skor 24-23 iken, takım en yorgun seviyedeyken üst üste 3 adet kusursuz ${konu} aksiyonu yaparak seti ve maçı bitirme drili.`
-        }
-      }
-    };
+    // 🏐 VOLEYBOL AKILLI KELİME TARAYICI ALGORİTMASI
+    if (aranan.includes("pasör") || aranan.includes("arka hat") || aranan.includes("varyasyon") || aranan.includes("hücum")) {
+      // 1. SENARYO: PASÖR ARKA HATTA / HÜCUM TAKTİKLERİ
+      stratejiNotu = `🔥 ${ageGroup.toUpperCase()} İLERİ DÜZEY TAKTİK: Pasörün arka hattan (1, 6, 5 numaradan) file önüne kaçarak 3 hücumcuyla (Smaçör, Orta, Pasör Çaprazı) oyun kurduğu K-1 sistem varyasyonları.`;
+      drilA = `• Pasör Kaçma & Dublaj Reaksiyonu (15 dk): ${playerCount} oyuncu sahaya dizilir. Karşı sahadan atılan serbest toplarla oyun başlar, arka hattaki pasör hızlıca file önüne kaçarken diğer oyuncular dublaj ve manşet emniyeti alır.`;
+      drilB = `• 3'lü Hücum Kombinasyonları (15 dk): Arka hattan gelen pasör, orta oyuncuya kurşun/kısa pas atarken, 4 numaradaki smaçör içe kat eder, arka hattan (pipe) 6 numara hücum varyasyonuna dahil olur.`;
+      drilC = `• Blok Dağıtma Maçı (15 dk): Kontrollü oyun simülasyonu. Pasör arka hattayken 3 hücumcuya blokları tekli bırakacak şekilde sürekli yön değiştirerek (dağıtarak) smaç vurdurma yüzdesi çalışılır.`;
+    } 
+    else if (aranan.includes("manşet") || aranan.includes("pas") || aranan.includes("karşılama")) {
+      // 2. SENARYO: MANŞET PAS VE SERVİS KARŞILAMA
+      stratejiNotu = `💡 ${ageGroup.toUpperCase()} TEKNİK ODAK: Manşet pas mekaniğinde kolların kilitlenmesi, topun geliş açısına göre gövdenin pasör havuzuna doğru dönmesi (platform oluşturma) kalitesi.`;
+      drilA = `• Yoğun Reaksiyon Manşeti (15 dk): Oyuncular 3'lü gruplara ayrılır. Antrenör kürsüden tempolu ve sert vuruşlar yapar. Sporcular kalçayı alçaltarak manşet platformu kurar.`;
+      drilB = `• Hedefe Hassas Aktarım (15 dk): 1 ve 5 numaradan alınan servis karşılama toplarının, file önündeki pasör kutusuna (2-3 numara arası) yüksek ve yumuşak şekilde düşürülme drili.`;
+      drilC = `• Servis Karşılama Baskısı (15 dk): Üst üste 5 adet kusursuz manşet pasör havuzuna ulaşana kadar dril devam eder. Hata yapıldığında seri sıfırlanır.`;
+    } 
+    else {
+      // 3. SENARYO: DİĞER GENEL KONULAR
+      stratejiNotu = `📋 ${ageGroup} grubu ${level} seviyesi için ${topic} çalışması genel stratejik planlamasıdır.`;
+      drilA = `• ${topic} Temel Form ve Mekanik (15 dk): Girdiğiniz "${topic}" konusuna yönelik duruş, saha içi pozisyon alımı ve topsuz koordinasyon drili.`;
+      drilB = `• Dinamik Kombinasyon (15 dk): ${playerCount} sporcu ile ${level} düzeyine uygun tempolu ve hareketli ${topic} istasyon çalışması.`;
+      drilC = `• Taktiksel Uygulama (15 dk): ${topic} becerisinin kontrollü rallilerle oyun içi alanlara aktarılması ve yüzdelik ölçümü.`;
+    }
 
-    const kat = db[ageGroup] || db["17+ Yaş (A Takım)"];
-    const res = kat[level] || kat["Orta Seviye"];
+    // ⏰ MATEMATİKSEL ZAMAN HESAPLAYICI
+    const toplam = parseInt(duration) || 90;
+    const isinma = Math.round(toplam * 0.16);
+    const taktik = Math.round(toplam * 0.22);
+    const soguma = Math.round(toplam * 0.11);
+    const anaTema = toplam - (isinma + taktik + soguma);
 
     const dinamikPlanMetni = `
-    🏐 ${ageGroup.toUpperCase()} GRUBU | ${gender.toUpperCase()} TAKIMI ANTRENMAN PROGRAMI
+
+    | ${ageGroup.toUpperCase()} GRUBU | ${gender.toUpperCase()} TAKIMI ANTRENMAN PROGRAMI |
     ======================================================================
-    Seviye: ${level} | Sporcu Sayısı: ${playerCount} Oyuncu | Toplam Süre: ${toplamSure} Dakika
+    Seviye: ${level} | Sporcu Sayısı: ${playerCount} Oyuncu | Toplam Süre: ${toplam} Dakika
     Günün Ana Odak Teması: ${konu}
     
-    ${res.strateji}
+    ${stratejiNotu}
     
     ----------------------------------------------------------------------
-    1. ISINMA & MOBİLİTE SEKANSI (${isinmaSuresi} Dakika)
+    1. ISINMA & MOBİLİTE SEKANSI (${isinma} Dakika)
     ----------------------------------------------------------------------
-    • Dinamik Koşu: Sahada çizgiler arası yan adımlama, dizleri çekerek ve topukları kalçaya vurarak nabız yükseltme.
-    • Mobilizasyon: Voleybola özgü omuz (rotator cuff) aktivasyonu, ayak bileği ve diz eklemlerini esnetme hareketleri.
-    • Toplu Isınma: ${playerCount} oyuncu karşılıklı eşleşerek kısa mesafeli parmak ve kontrollü manşet pas serileriyle top hissini artırır.
+    • Çizgiler arası dinamik koşularla nabız yükseltme ve voleybola özgü omuz aktivasyon drilleri.
     
     ----------------------------------------------------------------------
-    2. ANA TEMA TEKNİK ÇALIŞMASI: ${konu} (${anaTemaSuresi} Dakika)
+    2. ANA TEMA TEKNİK ÇALIŞMASI: ${konu} (${anaTema} Dakika)
     ----------------------------------------------------------------------
-    ${res.a}
-    ${res.b}
-    ${res.c}
+    ${drilA}
+    ${drilB}
+    ${drilC}
     
     ----------------------------------------------------------------------
-    3. TAKTİK & MAÇ SİMÜLASYONU (${taktikSure} Dakika)
+    3. TAKTİK & MAÇ SİMÜLASYONU (${taktik} Dakika)
     ----------------------------------------------------------------------
-    • Günün konusu olan "${topic}" becerisini oyun içine aktarmak için kontrollü maç simülasyonu.
-    • Oyun sadece bu teknikle başlatılacak veya karşılanacaktır. Kurallara uygun mükemmel yapılan her "${topic}" aksiyonu takıma direkt +2 puan kazandırır.
+    • Günün konusu olan "${topic}" becerisini test etmek için kontrollü maç simülasyonu. Kurallara uygun mükemmel yapılan her "${topic}" aksiyonu takıma direkt +2 puan kazandırır.
     
     ----------------------------------------------------------------------
-    4. SOĞUMA & ANTRENÖR DEĞERLENDİRMESİ (${sogumaSure} Dakika)
+    4. SOĞUMA & ANTRENÖR DEĞERLENDİRMESİ (${soguma} Dakika)
     ----------------------------------------------------------------------
-    • Statik Stretching: Kaslarda laktik asit birikimini ve ertesi gün oluşabilecek ağrıları önlemek için bacak, sırt ve omuz kaslarını esnetme.
-    • Antrenör Feedback Konuşması: Takım ortaya toplanır. ${ageGroup} pedagojisine uygun olarak günün performansı değerlendirilir; yapılan doğrular övülür, geliştirilmesi gereken eksikler aktarılır.
+    • Kaslarda laktik asit birikimini önlemek için statik esneme ve ${ageGroup} grubuna uygun günün performans feedback konuşması.
     `;
 
-    return NextResponse.json({
-      title: `✨ AI Dinamik Programı (${toplamSure} Dakika)`,
-      level: level,
-      rawText: dinamikPlanMetni
-    });
-
+    return NextResponse.json({ title: `✨ AI Dinamik Programı (${toplam} Dk)`, level: level, rawText: dinamikPlanMetni });
   } catch (error) {
-    return NextResponse.json({ error: "Sistemde teknik bir aksaklık oluştu." }, { status: 500 });
+    return NextResponse.json({ error: "Sistem hatası" }, { status: 500 });
   }
 }
